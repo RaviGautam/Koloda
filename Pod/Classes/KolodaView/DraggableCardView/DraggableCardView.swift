@@ -67,12 +67,7 @@ public class DraggableCardView: UIView, UIGestureRecognizerDelegate {
     private var tapGestureRecognizer: UITapGestureRecognizer!
     private var animationDirectionY: CGFloat = 1.0
     private var dragDistance = CGPoint.zero
-    
-    private var swipePercentageMargin: CGFloat {
-        let percentage = delegate?.card(cardSwipeThresholdRatioMargin: self) ?? 0.0
-        
-        return percentage != 0.0 ? percentage : 1.0
-    }
+    private var swipePercentageMargin: CGFloat = 0.0
 
     
     //MARK: Lifecycle
@@ -89,6 +84,16 @@ public class DraggableCardView: UIView, UIGestureRecognizerDelegate {
     override init(frame: CGRect) {
         super.init(frame: frame)
         setup()
+    }
+    
+    override public var frame: CGRect {
+        didSet {
+            if let ratio = delegate?.card(cardSwipeThresholdRatioMargin: self) , ratio != 0 {
+                swipePercentageMargin = ratio
+            } else {
+                swipePercentageMargin = 1.0
+            }
+        }
     }
     
     deinit {
@@ -215,7 +220,10 @@ public class DraggableCardView: UIView, UIGestureRecognizerDelegate {
             cardSwipeActionAnimationDuration = delegate.card(cardSwipeSpeed: self).rawValue
         }
     }
-    
+    //Added by Ravi Gautam to to work with scroll view
+    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        return true
+    }
     //MARK: GestureRecognizers
     @objc func panGestureRecognized(_ gestureRecognizer: UIPanGestureRecognizer) {
         dragDistance = gestureRecognizer.translation(in: self)
@@ -276,10 +284,18 @@ public class DraggableCardView: UIView, UIGestureRecognizerDelegate {
         }
         return false
     }
-    
-    public override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        guard gestureRecognizer == panGestureRecognizer else {
+     //Added by Ravi Gautam to to work only left and right swipe
+    private func isVerticalGesture(_ recognizer: UIPanGestureRecognizer) -> Bool {
+        let translation = recognizer.translation(in: superview!)
+        if abs(translation.x) > abs(translation.y) {
             return true
+        }
+        return false
+    }
+    //Changed by Ravi Gautam to to work only left and right swipe
+    public override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        if let panGestureRecognizer = gestureRecognizer as? UIPanGestureRecognizer {
+            return isVerticalGesture(panGestureRecognizer)
         }
         return delegate?.card(cardShouldDrag: self) ?? true
     }
