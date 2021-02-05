@@ -33,7 +33,7 @@ protocol DraggableCardDelegate: class {
 
 //Drag animation constants
 private let defaultRotationMax: CGFloat = 1.0
-private let defaultRotationAngle = CGFloat(Double.pi) / 10.0
+private let defaultRotationAngle = CGFloat(Double.pi) / 20.0
 private let defaultScaleMin: CGFloat = 0.8
 
 private let screenSize = UIScreen.main.bounds.size
@@ -91,7 +91,7 @@ public class DraggableCardView: UIView, UIGestureRecognizerDelegate {
             if let ratio = delegate?.card(cardSwipeThresholdRatioMargin: self) , ratio != 0 {
                 swipePercentageMargin = ratio
             } else {
-                swipePercentageMargin = 1.0
+                swipePercentageMargin = 0.20//1.0
             }
         }
     }
@@ -249,17 +249,19 @@ public class DraggableCardView: UIView, UIGestureRecognizerDelegate {
             delegate?.card(cardPanBegan: self)
             
         case .changed:
+           // set rotation angle CGFloat(Double.pi) / 20.0
+            animationDirectionY = 1.0
             let rotationStrength = min(dragDistance.x / frame.width, rotationMax)
             let rotationAngle = animationDirectionY * self.rotationAngle * rotationStrength
-            let scaleStrength = 1 - ((1 - scaleMin) * abs(rotationStrength))
-            let scale = max(scaleStrength, scaleMin)
-
+            //let scaleStrength = 1 - ((1 - scaleMin) * abs(rotationStrength))
+            //   let scale = max(scaleStrength, scaleMin)
+           
             var transform = CATransform3DIdentity
-            transform = CATransform3DScale(transform, scale, scale, 1)
+            //transform = CATransform3DScale(transform, scale, scale, 1)
             transform = CATransform3DRotate(transform, rotationAngle, 0, 0, 1)
-            transform = CATransform3DTranslate(transform, dragDistance.x, dragDistance.y, 0)
+            transform = CATransform3DTranslate(transform, dragDistance.x, 0/*dragDistance.y*/, 0)
             layer.transform = transform
-            
+      
             let percentage = dragPercentage
             updateOverlayWithFinishPercent(percentage, direction:dragDirection)
             if let dragDirection = dragDirection {
@@ -358,6 +360,7 @@ public class DraggableCardView: UIView, UIGestureRecognizerDelegate {
         let shouldSwipe = { direction in
             return self.delegate?.card(self, shouldSwipeIn: direction) ?? true
         }
+       
         if let dragDirection = dragDirection , shouldSwipe(dragDirection) && dragPercentage >= swipePercentageMargin && directions.contains(dragDirection) {
             swipeAction(dragDirection)
         } else {
